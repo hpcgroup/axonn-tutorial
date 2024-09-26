@@ -6,7 +6,8 @@ from torchvision import transforms
 import numpy as np
 from torch.cuda.amp import GradScaler
 import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
+from axonn import axonn as ax
+from axonn.intra_layer import auto_parallelize, sync_gradients
 from mpi4py import MPI
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -34,7 +35,13 @@ if __name__ == "__main__":
     
     ## Step 0 - Initialize Pytorch Distributed
     set_device_and_init_torch_dist()
-    log_dist('initialized pytorch dist', ranks=[0])
+    ax.init(
+                G_data=args.G_data,
+                G_intra_r=args.G_intra_r,
+                G_intra_c=args.G_intra_c,
+                G_intra_d=args.G_intra_d,
+            )
+    log_dist('initialized axonn', ranks=[0])
 
     ## Step 1 - Create a dataset object with transformations
     augmentations = transforms.Compose(
@@ -63,11 +70,10 @@ if __name__ == "__main__":
 
 
     ## Step 3 - Create Neural Network 
-    net = FC_Net(args.num_layers, args.image_size**2, args.hidden_size, 10).cuda()
+    with auto_parallelize():
+        net = FC_Net(args.num_layers, args.image_size**2, args.hidden_size, 10).cuda()
     params = num_params(net) / 1e6 
     
-    ## Step 4 - Pass model through DDP constructor
-    net = DDP(net, device_ids=[torch.cuda.current_device()])
 
     ## Step 5 - Create Optimizer and LR scheduler
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
@@ -98,6 +104,7 @@ if __name__ == "__main__":
 
             # DDP does all reduce in the backward pass
             scaler.scale(iter_loss).backward()
+            sync_gradients(net)
             scaler.step(optimizer)
             scaler.update()
             
