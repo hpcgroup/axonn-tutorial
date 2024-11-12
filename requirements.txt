@@ -1,0 +1,6 @@
+torch
+axonn
+lightning
+transformers
+datasets
+litgpt
