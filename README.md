@@ -42,20 +42,20 @@ sbatch run.sh -f configs/single_gpu_mp.json
 ### Pytorch Distributed Data Parallel (DDP)
 
 ```bash
-sbatch run.sh -f configs/ddp.json
+sbatch run.sh -g 4 -f configs/ddp.json
 ```
 
 ### Fully Sharded Data Parallelism (FSDP)
 
 
 ```bash
-sbatch run.sh -f configs/fsdp.json
+sbatch run.sh -g 4 -f configs/fsdp.json
 ```
 
 ## Tensor Parallelism
 
 ```bash
-sbatch run.sh -f configs/axonn.json
+sbatch run.sh -g 4 -f configs/axonn.json
 ```
 
 ## Inference
