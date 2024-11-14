@@ -1,4 +1,4 @@
-# ISC 24 - Tutorial on Distributed Training of Deep Neural Networks
+# SC 24 - Tutorial on Distributed Training of Deep Neural Networks
 
 [![Join slack](https://img.shields.io/badge/slack-axonn--users-blue)](https://join.slack.com/t/axonn-users/shared_invite/zt-2itbahk29-_Ig1JasFxnuVyfMtcC4GnA)
 
