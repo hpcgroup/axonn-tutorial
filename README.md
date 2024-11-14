@@ -1,4 +1,4 @@
-# ISC 24 - Tutorial on Distributed Training of Deep Neural Networks
+# SC 24 - Tutorial on Distributed Training of Deep Neural Networks
 
 [![Join slack](https://img.shields.io/badge/slack-axonn--users-blue)](https://join.slack.com/t/axonn-users/shared_invite/zt-2itbahk29-_Ig1JasFxnuVyfMtcC4GnA)
 
@@ -10,72 +10,55 @@ All the code for the hands-on exercies can be found in this repository.
 * [Basics of Model Training](#basics-of-model-training)
 * [Data Parallelism](#data-parallelism)
 * [Tensor Parallelism](#tensor-parallelism)
-* [Pipeline Parallelism](#pipeline-parallelism)
+* [Inference](#inference)
 
 ## Setup 
 
-To request an account on Zaratan, please join slack at the link above, and fill [this Google form](https://forms.gle/bowh2GWQaG34EZyq6).
+To request an account on Zaratan, please join slack at the link above, and fill [this Google form]().
 
 We have pre-built the dependencies required for this tutorial on Zaratan. This
 will be activated automatically when you run the bash scripts.
 
-The training dataset i.e. [MNIST](http://yann.lecun.com/exdb/mnist/) has also
-been downloaded in `/scratch/zt1/project/isc/shared/data/MNIST`.
+Model weights and the training dataset have 
+been downloaded in `/scratch/zt1/project/isc/shared/`.
 
 ## Basics of Model Training
 
-### Using PyTorch
+### Using PyTorch Lightning
 
 ```bash
-cd session_1_basics/
-sbatch --reservation=isc2024 run.sh
+sbatch run.sh -f configs/single_gpu.json
 ```
 
 ### Mixed Precision
 
 ```bash
-MIXED_PRECISION=true sbatch --reservation=isc2024 run.sh
+sbatch run.sh -f configs/single_gpu_mp.json
 ```
 
-### Activation Checkpointing
-
-```bash
-CHECKPOINT_ACTIVATIONS=true sbatch --reservation=isc2024 run.sh
-```
 
 ## Data Parallelism
 
 ### Pytorch Distributed Data Parallel (DDP)
 
 ```bash
-cd session_2_data_parallelism
-sbatch --reservation=isc2024 run_ddp.sh
+sbatch run.sh -g 4 -f configs/ddp.json
 ```
 
-### Zero Redundancy Optimizer (ZeRO)
+### Fully Sharded Data Parallelism (FSDP)
 
 
 ```bash
-sbatch --reservation=isc2024 run_deepspeed.sh
+sbatch run.sh -g 4 -f configs/fsdp.json
 ```
 
-## Intra-layer (Tensor) Parallelism
+## Tensor Parallelism
 
 ```bash
-cd session_3_intra_layer_parallelism
-sbatch --reservation=isc2024 run.sh
+sbatch run.sh -g 4 -f configs/axonn.json
 ```
 
-## Inter-layer (Pipeline) Parallelism
-
-
-```bash
-cd session_4_inter_layer_parallelism
-sbatch --reservation=isc2024 run.sh
-```
-
-### Hybrid Inter-layer (Pipeline) + Data Parallelism
+## Inference
 
 ```bash
-HYBRID_PARR=true sbatch --reservation=isc2024 run.sh
 ```

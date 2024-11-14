@@ -1,40 +1,48 @@
 import torch
 import torch.distributed as dist
-import random
-import numpy as np
-
-def print_memory_stats():
-    curr_memory = torch.cuda.memory_allocated() / 1024 / 1024 / 1024
-    peak_memory = torch.cuda.max_memory_allocated() / 1024 / 1024 / 1024
-    if dist.is_initialized():
-        if dist.get_rank() == 0:
-            print(f"Current Memory Usage = {curr_memory:.2f} GB | Peak Memory Usage = {peak_memory:.2f} GB")
-    else:
-        print(f"Current Memory Usage = {curr_memory:.2f} GB | Peak Memory Usage = {peak_memory:.2f} GB")
-
-def num_params(model):
-    params = 0
-    for param in model.parameters():
-        params += param.numel()
-    return params
-
-def log_dist(msg, ranks=[]):
-    assert dist.is_initialized()
-    if dist.get_rank() in ranks:
-        print(f"Rank {dist.get_rank()} : {msg}")
-
-def report_local_and_global_params(net):
-    assert dist.is_initialized()
-    local_params = num_params(net)/1e6
-    log_dist(f"Local Model Params  = {local_params:.3f} M", list(range(dist.get_world_size())))
-    dist.barrier()
-    total_params = torch.tensor([local_params], device='cuda')
-    dist.all_reduce(total_params)
-    log_dist(f"Total Model Params = {total_params.item():.3f} M", [0])
 
 
-def set_seed(seed=123):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+def all_reduce_avg(tensor):
+    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+    tensor /= dist.get_world_size()
+    return tensor
+
+
+class color:
+    """
+    courtesy - https://gist.github.com/nazwadi/ca00352cd0d20b640efd
+    """
+
+    PURPLE = "\033[95m"
+    CYAN = "\033[96m"
+    DARKCYAN = "\033[36m"
+    BLUE = "\033[94m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    END = "\033[0m"
+
+
+def pretty_log(
+    iteration,
+    total_train_iters,
+    train_loss,
+    elapsed_time_per_iteration,
+    grad_norm,
+    learning_rate,
+):
+    log_string = "> global batch {:8d}/{:8d} |".format(iteration, total_train_iters)
+    log_string += " elapsed time per global batch (ms): {:.1f} |".format(
+        elapsed_time_per_iteration
+    )
+    log_string += " learning rate: {:.3E} |".format(learning_rate)
+    log_string += " loss: {:.5f} |".format(train_loss)
+    curr_mem = torch.cuda.memory_allocated() / 1024 / 1024 / 1024
+    peak_mem = torch.cuda.max_memory_allocated() / 1024 / 1024 / 1024
+    log_string += " memory used by tensors {:.3f} GB (peak {:.3f} GB) |".format(
+        curr_mem, peak_mem
+    )
+    log_string += " grad_norm: {:.2f}".format(grad_norm)
+    return log_string
