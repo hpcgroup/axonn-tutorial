@@ -5,24 +5,16 @@ from types import SimpleNamespace
 def parse_json_args(filename):
     args = {
         "model_id": "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T",
-        "model_impl": "hf",
-        "litgpt_checkpoint_directory": "",
-        "dataset_id": "ultrachat",
+        "dataset_id": "alpaca",
         "seed": 123456,
-        "dtype": "bf16-mixed",
+        "dtype": "32",
         "strategy": "axonn",
-        "use_flash_attention": True,
         "axonn_dimensions": [],
         "global_batch_size": 4,
         "gradient_acc_steps": 1,
         "sequence_length": 2048,
-        "num_nodes": 1,
-        "log_interval": 10,
+        "log_interval": 1,
         "num_epochs": 1,
-        "wandb_log": False,
-        "wandb_project": "",
-        "wandb_run_name": "",
-        "max_iters": -1,
         "random_init": False,
     }
 

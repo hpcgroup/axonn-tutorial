@@ -40,7 +40,10 @@ def download_from_hub(
         model_name: The existing config name to use for this repo_id. This is useful to download alternative weights of
             existing architectures.
     """
-    options = [f"{config['hf_config']['org']}/{config['hf_config']['name']}" for config in configs]
+    options = [
+        f"{config['hf_config']['org']}/{config['hf_config']['name']}"
+        for config in configs
+    ]
 
     if repo_id == "list":
         print("Please specify --repo_id <repo_id>. Available values:")
@@ -48,12 +51,14 @@ def download_from_hub(
         return
 
     if model_name is None and repo_id not in options:
-        print(f"Unsupported `repo_id`: {repo_id}."
-        "\nIf you are trying to download alternative "
-        "weights for a supported model, please specify the corresponding model via the `--model_name` option, "
-        "for example, `litgpt download NousResearch/Hermes-2-Pro-Llama-3-8B --model_name Llama-3-8B`."
-        "\nAlternatively, please choose a valid `repo_id` from the list of supported models, which can be obtained via "
-        "`litgpt download list`.")
+        print(
+            f"Unsupported `repo_id`: {repo_id}."
+            "\nIf you are trying to download alternative "
+            "weights for a supported model, please specify the corresponding model via the `--model_name` option, "
+            "for example, `litgpt download NousResearch/Hermes-2-Pro-Llama-3-8B --model_name Llama-3-8B`."
+            "\nAlternatively, please choose a valid `repo_id` from the list of supported models, which can be obtained via "
+            "`litgpt download list`."
+        )
         return
 
     from huggingface_hub import snapshot_download
@@ -102,7 +107,9 @@ def download_from_hub(
 
     if convert_checkpoint and not tokenizer_only:
         print("Converting checkpoint files to LitGPT format.")
-        convert_hf_checkpoint(checkpoint_dir=directory, dtype=dtype, model_name=model_name)
+        convert_hf_checkpoint(
+            checkpoint_dir=directory, dtype=dtype, model_name=model_name
+        )
 
 
 def convert_safetensors_file(safetensor_path: Path) -> None:
@@ -113,7 +120,9 @@ def convert_safetensors_file(safetensor_path: Path) -> None:
     try:
         result = safetensors_load(safetensor_path)
     except SafetensorError as e:
-        raise RuntimeError(f"{safetensor_path} is likely corrupted. Please try to re-download it.") from e
+        raise RuntimeError(
+            f"{safetensor_path} is likely corrupted. Please try to re-download it."
+        ) from e
     print(f"{safetensor_path} --> {bin_path}")
     torch.save(result, bin_path)
     try:
@@ -125,7 +134,9 @@ def convert_safetensors_file(safetensor_path: Path) -> None:
         )
 
 
-def find_weight_files(repo_id: str, access_token: Optional[str]) -> Tuple[List[str], List[str]]:
+def find_weight_files(
+    repo_id: str, access_token: Optional[str]
+) -> Tuple[List[str], List[str]]:
     from huggingface_hub import repo_info
     from huggingface_hub.utils import filter_repo_objects
 
@@ -133,7 +144,9 @@ def find_weight_files(repo_id: str, access_token: Optional[str]) -> Tuple[List[s
         info = repo_info(repo_id, token=access_token)
     filenames = [f.rfilename for f in info.siblings]
     bins = list(filter_repo_objects(items=filenames, allow_patterns=["*.bin*"]))
-    safetensors = list(filter_repo_objects(items=filenames, allow_patterns=["*.safetensors*"]))
+    safetensors = list(
+        filter_repo_objects(items=filenames, allow_patterns=["*.safetensors*"])
+    )
     return bins, safetensors
 
 
@@ -162,6 +175,7 @@ def gated_repo_catcher(repo_id: str, access_token: Optional[str]):
                     f" visit https://huggingface.co/{repo_id} for more information."
                 ) from None
         raise e from None
+
 
 if __name__ == "__main__":
     repo_id = sys.argv[1]

@@ -24,8 +24,7 @@ def copy_weights_gpt_neox(
     dtype: Optional[torch.dtype] = None,
     pbar: Optional[tqdm] = None,
     progress_per_file: Optional[float] = None,
-    debug_mode: Optional[bool] = False
-
+    debug_mode: Optional[bool] = False,
 ) -> None:
     weight_map = {
         "gpt_neox.embed_in.weight": "transformer.wte.weight",
@@ -78,7 +77,7 @@ def copy_weights_falcon(
     dtype: Optional[torch.dtype] = None,
     pbar: Optional[tqdm] = None,
     progress_per_file: Optional[float] = None,
-    debug_mode: Optional[bool] = False
+    debug_mode: Optional[bool] = False,
 ) -> None:
     weight_map = {
         "transformer.word_embeddings.weight": "transformer.wte.weight",
@@ -137,7 +136,7 @@ def copy_weights_hf_llama(
     dtype: Optional[torch.dtype] = None,
     pbar: Optional[tqdm] = None,
     progress_per_file: Optional[float] = None,
-    debug_mode: Optional[bool] = False
+    debug_mode: Optional[bool] = False,
 ) -> None:
     weight_map = {
         "model.embed_tokens.weight": "transformer.wte.weight",
@@ -166,8 +165,8 @@ def copy_weights_hf_llama(
     elif config.mlp_class_name in ("LLaMAMLP", "GemmaMLP"):
         weight_map.update(
             {
-                "model.layers.{}.mlp.gate_proj.weight": None, #"transformer.h.{l}.mlp.fc_1.weight",
-                "model.layers.{}.mlp.up_proj.weight": None, #"transformer.h.{l}.mlp.fc_2.weight",
+                "model.layers.{}.mlp.gate_proj.weight": None,  # "transformer.h.{l}.mlp.fc_1.weight",
+                "model.layers.{}.mlp.up_proj.weight": None,  # "transformer.h.{l}.mlp.fc_2.weight",
                 "model.layers.{}.mlp.down_proj.weight": "transformer.h.{l}.mlp.proj.weight",
             }
         )
@@ -175,7 +174,9 @@ def copy_weights_hf_llama(
         raise NotImplementedError
 
     if progress_per_file is not None:
-        progress_per_file = progress_per_file / max(1, len(hf_weights) + len(qkv_weights))
+        progress_per_file = progress_per_file / max(
+            1, len(hf_weights) + len(qkv_weights)
+        )
 
     for name, param in hf_weights.items():
         if "model.layers" in name:
@@ -219,16 +220,19 @@ def copy_weights_hf_llama(
             # split across different .bin files
             continue
 
-        gate_proj = load_param(gate_proj, f"layer {i} gate_proj", dtype, verbose=debug_mode)
+        gate_proj = load_param(
+            gate_proj, f"layer {i} gate_proj", dtype, verbose=debug_mode
+        )
         up_proj = load_param(up_proj, f"layer {i} up_proj", dtype, verbose=debug_mode)
-        #gate_up_proj = torch.cat([gate_proj, up_proj])
-        gate_up_proj = torch.stack((gate_proj, up_proj), dim=1).reshape(2 * gate_proj.size(0), -1)
+        # gate_up_proj = torch.cat([gate_proj, up_proj])
+        gate_up_proj = torch.stack((gate_proj, up_proj), dim=1).reshape(
+            2 * gate_proj.size(0), -1
+        )
         state_dict[f"transformer.h.{i}.mlp.gate_up_proj.weight"] = gate_up_proj
         del gate_up_proj_weights[i]
 
         if progress_per_file is not None:
             pbar.update(progress_per_file)
-
 
     # convert separate q, k, v matrices into an interleaved qkv
     for i, (q, k, v) in list(qkv_weights.items()):
@@ -259,7 +263,7 @@ def copy_weights_gemma_2(
     dtype: Optional[torch.dtype] = None,
     pbar: Optional[tqdm] = None,
     progress_per_file: Optional[float] = None,
-    debug_mode: Optional[bool] = False
+    debug_mode: Optional[bool] = False,
 ) -> None:
     weight_map = {
         "model.embed_tokens.weight": "transformer.wte.weight",
@@ -279,7 +283,9 @@ def copy_weights_gemma_2(
     }
 
     if progress_per_file is not None:
-        progress_per_file = progress_per_file / max(1, len(hf_weights) + len(qkv_weights))
+        progress_per_file = progress_per_file / max(
+            1, len(hf_weights) + len(qkv_weights)
+        )
 
     for name, param in hf_weights.items():
         if "model.layers" in name:
@@ -336,16 +342,18 @@ def copy_weights_phi(
     dtype: Optional[torch.dtype] = None,
     pbar: Optional[tqdm] = None,
     progress_per_file: Optional[float] = None,
-    debug_mode: Optional[bool] = False
+    debug_mode: Optional[bool] = False,
 ) -> None:
-    if any(layer_name.startswith(("layers.", "transformer.")) for layer_name in hf_weights):
+    if any(
+        layer_name.startswith(("layers.", "transformer.")) for layer_name in hf_weights
+    ):
         raise ValueError(
             "You are using an outdated Phi checkpoint. Please reload it as described in 'tutorials/download_phi.md'"
         )
 
-    #Phi uses NeoX style MLP
-    #Phi-3 uses LLama style MLP
-    #For phi-3 the gate and up-proj weights are already fused
+    # Phi uses NeoX style MLP
+    # Phi-3 uses LLama style MLP
+    # For phi-3 the gate and up-proj weights are already fused
 
     # maps from hf -> litgpt
     weight_map = {
@@ -360,7 +368,7 @@ def copy_weights_phi(
         "model.layers.{}.self_attn.v_proj.bias": None,
         "model.layers.{}.self_attn.dense.weight": "transformer.h.{}.attn.proj.weight",
         "model.layers.{}.self_attn.dense.bias": "transformer.h.{}.attn.proj.bias",
-        "model.layers.{}.mlp.fc1.weight": "transformer.h.{}.mlp.fc.weight", 
+        "model.layers.{}.mlp.fc1.weight": "transformer.h.{}.mlp.fc.weight",
         "model.layers.{}.mlp.fc1.bias": "transformer.h.{}.mlp.fc.bias",
         "model.layers.{}.mlp.fc2.weight": "transformer.h.{}.mlp.proj.weight",
         "model.layers.{}.mlp.fc2.bias": "transformer.h.{}.mlp.proj.bias",
@@ -382,7 +390,9 @@ def copy_weights_phi(
         )
 
     if progress_per_file is not None:
-        progress_per_file = progress_per_file / max(1, len(hf_weights) + len(qkv_weights))
+        progress_per_file = progress_per_file / max(
+            1, len(hf_weights) + len(qkv_weights)
+        )
 
     for name, param in hf_weights.items():
         if name.startswith("model.layers."):
@@ -420,9 +430,15 @@ def copy_weights_phi(
             if len(qkv) != 3:
                 # split across different .bin files
                 continue
-            q = load_param(qkv["q_proj"], f"layer {i} q {weight_type}", dtype, verbose=debug_mode)
-            k = load_param(qkv["k_proj"], f"layer {i} k {weight_type}", dtype, verbose=debug_mode)
-            v = load_param(qkv["v_proj"], f"layer {i} v {weight_type}", dtype, verbose=debug_mode)
+            q = load_param(
+                qkv["q_proj"], f"layer {i} q {weight_type}", dtype, verbose=debug_mode
+            )
+            k = load_param(
+                qkv["k_proj"], f"layer {i} k {weight_type}", dtype, verbose=debug_mode
+            )
+            v = load_param(
+                qkv["v_proj"], f"layer {i} v {weight_type}", dtype, verbose=debug_mode
+            )
             q_per_kv = config.n_head // config.n_query_groups
             qs = torch.split(q, config.head_size * q_per_kv)
             ks = torch.split(k, config.head_size)
@@ -435,7 +451,9 @@ def copy_weights_phi(
                 pbar.update(progress_per_file)
 
 
-def qkv_reassemble(param: Union[torch.Tensor, NotYetLoadedTensor], config: Config) -> torch.Tensor:
+def qkv_reassemble(
+    param: Union[torch.Tensor, NotYetLoadedTensor], config: Config
+) -> torch.Tensor:
     """Reassemble from a normal to an interleaved placement in a QKV matrix.
     [Q, Q, ..., K, K, ..., V, V, ...] --> [Q, K, V, Q, K, V, ...]
     """
@@ -461,13 +479,22 @@ def layer_template(layer_name: str, idx: int) -> Tuple[str, int]:
     return from_name, number
 
 
-def load_param(param: Union[torch.Tensor, NotYetLoadedTensor], name: str, dtype: Optional[torch.dtype], verbose=False) -> torch.Tensor:
+def load_param(
+    param: Union[torch.Tensor, NotYetLoadedTensor],
+    name: str,
+    dtype: Optional[torch.dtype],
+    verbose=False,
+) -> torch.Tensor:
     if hasattr(param, "_load_tensor"):
         # support tensors loaded via `lazy_load()`
         if verbose:
             print(f"Loading {name!r} into RAM")
         param = param._load_tensor()
-    if dtype is not None and type(dtype) is not NotYetLoadedTensor and dtype != param.dtype:
+    if (
+        dtype is not None
+        and type(dtype) is not NotYetLoadedTensor
+        and dtype != param.dtype
+    ):
         if verbose:
             print(f"Converting {name!r} from {param.dtype} to {dtype}")
         param = param.to(dtype)
@@ -480,7 +507,7 @@ def convert_hf_checkpoint(
     *,
     model_name: Optional[str] = None,
     dtype: Optional[str] = None,
-    debug_mode: Optional[bool] = False
+    debug_mode: Optional[bool] = False,
 ) -> None:
     """
     Convert a Hugging Face Transformers checkpoint into a LitGPT compatible checkpoint.
@@ -518,7 +545,9 @@ def convert_hf_checkpoint(
         # holder to reconstitute the split q, k, v
         qkv_weights = {}
         gate_up_proj_weights = {}
-        copy_fn = partial(copy_weights_hf_llama, config, qkv_weights, gate_up_proj_weights)
+        copy_fn = partial(
+            copy_weights_hf_llama, config, qkv_weights, gate_up_proj_weights
+        )
     else:
         copy_fn = copy_weights_gpt_neox
 
@@ -535,7 +564,10 @@ def convert_hf_checkpoint(
     elif model_safetensor_map_json_path.is_file():
         with open(model_safetensor_map_json_path, encoding="utf-8") as json_map:
             bin_index = json.load(json_map)
-        bin_files = {checkpoint_dir / Path(bin).with_suffix(".bin") for bin in bin_index["weight_map"].values()}
+        bin_files = {
+            checkpoint_dir / Path(bin).with_suffix(".bin")
+            for bin in bin_index["weight_map"].values()
+        }
     else:
         bin_files = set(checkpoint_dir.glob("*.bin"))
         # some checkpoints serialize the training arguments
@@ -550,17 +582,33 @@ def convert_hf_checkpoint(
         if not debug_mode:
             # Using tqdm progress bar when not in debug mode
 
-            total_size = max(1, sum(os.path.getsize(bin_file) for bin_file in bin_files))
+            total_size = max(
+                1, sum(os.path.getsize(bin_file) for bin_file in bin_files)
+            )
             total_progress = 100
 
-            with tqdm(total=total_progress, desc="Initializing", bar_format="{desc}{percentage:3.0f}%|{bar}| {elapsed}<{remaining}, {rate_fmt}") as pbar:
+            with tqdm(
+                total=total_progress,
+                desc="Initializing",
+                bar_format="{desc}{percentage:3.0f}%|{bar}| {elapsed}<{remaining}, {rate_fmt}",
+            ) as pbar:
                 for bin_file in sorted(bin_files):
                     pbar.set_description(f"Loading weights: {bin_file.name}")
                     current_file_size = os.path.getsize(bin_file)
-                    progress_per_file = (current_file_size / total_size) * total_progress
+                    progress_per_file = (
+                        current_file_size / total_size
+                    ) * total_progress
 
                     hf_weights = lazy_load(bin_file)
-                    copy_fn(sd, hf_weights, saver=saver, dtype=dtype, pbar=pbar, progress_per_file=progress_per_file, debug_mode=debug_mode)
+                    copy_fn(
+                        sd,
+                        hf_weights,
+                        saver=saver,
+                        dtype=dtype,
+                        pbar=pbar,
+                        progress_per_file=progress_per_file,
+                        debug_mode=debug_mode,
+                    )
                 gc.collect()
 
                 if pbar.n < total_progress:

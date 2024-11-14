@@ -1,25 +1,12 @@
-import torch.distributed
-from transformers import AutoConfig
-import transformers.models as models
+import torch
+import torch.distributed as dist
 
 
 def all_reduce_avg(tensor):
-    torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.SUM)
-    tensor /= torch.distributed.get_world_size()
+    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+    tensor /= dist.get_world_size()
     return tensor
 
-
-def get_fsdp_block_name_for_hf(model_id):
-    MODEL_ID_TO_DECODER_CLASS_MAP = {
-        "LlamaForCausalLM": models.llama.modeling_llama.LlamaDecoderLayer,
-        "PhiForCausalLM": models.phi.modeling_phi.PhiDecoderLayer,
-    }
-    config = AutoConfig.from_pretrained(model_id)
-    architecture = config.architectures[0]
-    assert (
-        architecture in MODEL_ID_TO_DECODER_CLASS_MAP
-    ), f"please add the name of the decoder layer of {architecture} to MODEL_ID_TO_DECODER_CLASS_MAP"
-    return MODEL_ID_TO_DECODER_CLASS_MAP[architecture]
 
 class color:
     """
@@ -38,43 +25,24 @@ class color:
     END = "\033[0m"
 
 
-class Node:
-    def __init__(self, value):
-        self.value = value
-        self.children = []
-        self.level_color_map = [color.PURPLE, color.GREEN, color.CYAN, color.RED]
-
-    def add_children(self, child):
-        self.children.append(child)
-
-    def __str__(self, level=0):
-        this_color = self.level_color_map[level % len(self.level_color_map)]
-        ret = (
-            "\t" * level + "|--" + f"{this_color} {repr(self.value)} {color.END}" + "\n"
-        )
-        for child in self.children:
-            ret += child.__str__(level + 1)
-        return ret
-
-    def __repr__(self):
-        return f"\n{self.value}"
-
-
-def print_axonn_timer_data(times):
-    sorted_call_stacks = list(times.keys())
-    sorted_call_stacks.sort(key=lambda x: len(x))
-    head_nodes = []
-    node_map = {}
-    for call_stack in sorted_call_stacks:
-        time = times[call_stack]
-        node = Node(f"{call_stack[-1]} | {time:.3f} ms")
-        node_map[call_stack] = node
-        if len(call_stack) > 1:
-            parent_node = call_stack[:-1]
-            assert parent_node in node_map
-            node_map[parent_node].add_children(node)
-        else:
-            head_nodes.append(node)
-
-    for node in head_nodes:
-        print(str(node))
+def pretty_log(
+    iteration,
+    total_train_iters,
+    train_loss,
+    elapsed_time_per_iteration,
+    grad_norm,
+    learning_rate,
+):
+    log_string = "> global batch {:8d}/{:8d} |".format(iteration, total_train_iters)
+    log_string += " elapsed time per global batch (ms): {:.1f} |".format(
+        elapsed_time_per_iteration
+    )
+    log_string += " learning rate: {:.3E} |".format(learning_rate)
+    log_string += " loss: {:.5f} |".format(train_loss)
+    curr_mem = torch.cuda.memory_allocated() / 1024 / 1024 / 1024
+    peak_mem = torch.cuda.max_memory_allocated() / 1024 / 1024 / 1024
+    log_string += " memory used by tensors {:.3f} GB (peak {:.3f} GB) |".format(
+        curr_mem, peak_mem
+    )
+    log_string += " grad_norm: {:.2f}".format(grad_norm)
+    return log_string

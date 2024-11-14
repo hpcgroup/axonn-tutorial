@@ -6,7 +6,9 @@ import torch
 from model import GPT
 
 if __name__ == "__main__":
-    checkpoint_dir = Path("./checkpoints/TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T")
+    checkpoint_dir = Path(
+        "./checkpoints/TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
+    )
     config = Config.from_file(checkpoint_dir / "model_config.yaml")
     model = GPT(config)
 
@@ -15,5 +17,3 @@ if __name__ == "__main__":
     model.load_state_dict(state_dict)
     print("successfully loaded model")
     print(model.state_dict().keys())
-
-
