@@ -31,7 +31,7 @@ CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  run.sh
 ```
 
 ### Mixed Precision
-Open `configs/single_gpu.json` and change precision to `bf16-mixed` and then run - 
+Open `configs/single_gpu.json` and change `precision` to `bf16-mixed` and then run - 
 
 ```bash
 CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  run.sh
