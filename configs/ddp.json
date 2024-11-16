@@ -1,7 +1,7 @@
 {
 	"model_id": "microsoft/phi-1_5",
 	"strategy": "ddp",
-	"dtype": "bf16-mixed", 
+	"precision": "bf16-mixed", 
 	"global_batch_size": 128, 
 	"dataset_id": "alpaca"
 }

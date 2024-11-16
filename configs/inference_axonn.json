@@ -1,0 +1,6 @@
+{
+	"model_id": "meta-llama/Meta-Llama-3-8B",
+	"strategy": "axonn",
+	"axonn_dimensions": [1, 1, 1],
+	"precision": "bf16-mixed" 
+}
