@@ -2,6 +2,6 @@
 	"model_id": "microsoft/phi-1_5",
 	"strategy": "single_device",
 	"global_batch_size": 32, 
-	"dataset_id": "alpaca"
+	"dataset_id": "alpaca",
 	"dtype": "32"
 }

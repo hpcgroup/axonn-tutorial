@@ -10,14 +10,17 @@ from lightning.fabric.strategies import FSDPStrategy, DDPStrategy
 from transformers.utils import logging
 from utils import all_reduce_avg, pretty_log
 from args import parse_json_args
-from model import get_model
-from external.model import Block
 import pprint
+from litgpt.model import Config
+from pathlib import Path
+from litgpt.utils import load_checkpoint
+from external.model import GPT, Block
+
 
 logging.set_verbosity_error()
 
 
-def init_everything(dtype, strategy, axonn_dims):
+def init_everything(precision, strategy, axonn_dims):
     # initialize torch distributed
     rank = int(os.getenv("SLURM_PROCID", 0))
     world_size = int(os.getenv("SLURM_NTASKS", 1))
@@ -50,7 +53,7 @@ def init_everything(dtype, strategy, axonn_dims):
         strategy=pl_strategy,
         devices=1 if strategy == "single_device" else torch.cuda.device_count(),
         num_nodes=1,
-        precision=dtype,
+        precision=precision,
     )
     fabric.launch()
 
@@ -58,17 +61,6 @@ def init_everything(dtype, strategy, axonn_dims):
         print(f"Going to distribute the model over {world_size} GPUs")
 
     return fabric
-
-
-def create_parser():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "--config-file",
-        type=str,
-        default="sample_args_file.json",
-        help="Name of JSON file with args",
-    )
-    return parser
 
 
 def get_dataloader(args):
@@ -79,7 +71,6 @@ def get_dataloader(args):
         raise Exception(
             f"Dataset not tokenized. cd into 'data/alpaca' and run 'python prepare.py --model_id {args.model_id}' to tokenize dataset"
         )
-
     tokenizer = AutoTokenizer.from_pretrained(args.model_id)
     tokenizer.pad_token_id = 0
     tokenizer.padding_side = "right"
@@ -93,6 +84,22 @@ def get_dataloader(args):
         ),
     )
     return dataloader
+
+def get_model(fabric, litgpt_checkpoint_directory, random_init: bool = False):
+    with fabric.init_module(empty_init=True): 
+        # empty_init=True initializes meta tensors on the CPU i.e.
+        # tensors with no data
+        checkpoint_dir = Path(litgpt_checkpoint_directory)
+        config = Config.from_file(checkpoint_dir / "model_config.yaml")
+        model = GPT(config)
+    # setup_module moves the model to the GPU. Actual model tensors 
+    # are created in this step, directly on the GPU. 
+    model = fabric.setup_module(model)
+    if not random_init:
+        checkpoint_path = checkpoint_dir / "lit_model.pth"
+        load_checkpoint(fabric, model, checkpoint_path)
+    model.train()
+    return model
 
 def get_lr_scheduler(total_train_iters, warmup_iters=100):
     main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -108,6 +115,16 @@ def get_lr_scheduler(total_train_iters, warmup_iters=100):
     )
     return lr_scheduler
 
+def create_parser():
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--config-file",
+        type=str,
+        default="sample_args_file.json",
+        help="Name of JSON file with args",
+    )
+    return parser
+
 if __name__ == "__main__":
     # Parse arguments
     parser = create_parser()
@@ -115,7 +132,7 @@ if __name__ == "__main__":
     args = parse_json_args(parser_args.config_file)
     
     # Create lightning fabric object
-    fabric = init_everything(args.dtype, args.strategy, args.axonn_dimensions)
+    fabric = init_everything(args.precision, args.strategy, args.axonn_dimensions)
     seed_everything(args.seed)
 
     # Create model
@@ -162,10 +179,9 @@ if __name__ == "__main__":
         batch_loss = torch.tensor([0.0], dtype=torch.float32, device="cuda")
 
         for batch in dataloader:
-            input_ids, labels, attention_mask = (
+            input_ids, labels = (
                 batch["input_ids"].cuda(),
                 batch["labels"].cuda(),
-                batch["attention_mask"].cuda(),
             )
             input_ids = input_ids[:, :-1]
             labels = labels[:, 1:]
