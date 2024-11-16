@@ -60,7 +60,7 @@ def init_everything(dtype, strategy, axonn_dims):
 def create_parser():
     parser = ArgumentParser()
     parser.add_argument(
-        "--file",
+        "--config-file",
         type=str,
         default="sample_args_file.json",
         help="Name of JSON file with args",
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     # Parse arguments
     parser = create_parser()
     parser_args = parser.parse_args()
-    args = parse_json_args(parser_args.file)
+    args = parse_json_args(parser_args.config_file)
     
     # Create lightning fabric object
     fabric = init_everything(args.dtype, args.strategy, args.axonn_dimensions)

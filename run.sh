@@ -13,28 +13,25 @@ export HF_HOME="${SCRATCH}/.cache/huggingface"
 export HF_TRANSFORMERS_CACHE="${HF_HOME}"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
 
-module load python
-source $SCRATCH/axonn_venv/bin/activate
+echo "Copying python environment to fast node local storage"
+start=`date +%s`
+#mkdir -p /tmp/tutorial_env
+#tar -xzf ${SCRATCH}/miniconda3.tar.gz -C /tmp/tutorial_env
+end=`date +%s`
+runtime=$((end-start))
+echo "Copy completed. Time taken = ${runtime} s"
 
-# Default values
-ARGS_FILE="configs/single_gpu.json"
-GPUS=1
+# activate environment
+source /tmp/tutorial_env/bin/activate
 
-# Parse command-line arguments
-while getopts g:f: flag
-do
-    case "${flag}" in
-        g) GPUS=${OPTARG};;
-        f) ARGS_FILE=${OPTARG};;
-        *) echo "Invalid option"; exit 1;;
-    esac
-done
 
-SCRIPT="train.py --file $ARGS_FILE"
+CONFIG_FILE="${CONFIG_FILE:-"configs/single_gpu.json"}"
+GPUS_PER_NODE="${GPUS_PER_NODE:-1}"
 
 
 export OMP_NUM_THREADS=16
 export PYTHONUNBUFFERED=1
+
 # Run torchrun with specified number of GPUs
-torchrun --nproc_per_node=$GPUS --nnodes=1 --node_rank=0 $SCRIPT
+torchrun --nproc_per_node=$GPUS_PER_NODE --nnodes=1 --node_rank=0 train.py --config-file $CONFIG_FILE
 
