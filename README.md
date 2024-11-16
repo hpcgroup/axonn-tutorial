@@ -27,13 +27,14 @@ been downloaded in `/scratch/zt1/project/isc/shared/`.
 ### Using PyTorch Lightning
 
 ```bash
-sbatch run.sh -f configs/single_gpu.json
+CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  run.sh
 ```
 
 ### Mixed Precision
+Open `configs/single_gpu.json` and change `precision` to `bf16-mixed` and then run - 
 
 ```bash
-sbatch run.sh -f configs/single_gpu_mp.json
+CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  run.sh
 ```
 
 
@@ -42,20 +43,20 @@ sbatch run.sh -f configs/single_gpu_mp.json
 ### Pytorch Distributed Data Parallel (DDP)
 
 ```bash
-sbatch run.sh -g 4 -f configs/ddp.json
+CONFIG_FILE=configs/ddp.json sbatch --ntasks-per-node=4  run.sh
 ```
 
 ### Fully Sharded Data Parallelism (FSDP)
 
 
 ```bash
-sbatch run.sh -g 4 -f configs/fsdp.json
+CONFIG_FILE=configs/fsdp.json sbatch --ntasks-per-node=4  run.sh
 ```
 
 ## Tensor Parallelism
 
 ```bash
-sbatch run.sh -g 4 -f configs/axonn.json
+CONFIG_FILE=configs/axonn.json sbatch --ntasks-per-node=4  run.sh
 ```
 
 ## Inference

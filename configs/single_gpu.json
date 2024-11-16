@@ -3,4 +3,5 @@
 	"strategy": "single_device",
 	"global_batch_size": 32, 
 	"dataset_id": "alpaca"
+	"dtype": "32"
 }
