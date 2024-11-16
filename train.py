@@ -19,8 +19,11 @@ logging.set_verbosity_error()
 
 def init_everything(dtype, strategy, axonn_dims):
     # initialize torch distributed
-    torch.distributed.init_process_group(backend="nccl")
-    world_size = torch.distributed.get_world_size()
+    rank = int(os.getenv("SLURM_PROCID", 0))
+    world_size = int(os.getenv("SLURM_NTASKS", 1))
+    torch.distributed.init_process_group(rank=rank, 
+            world_size=world_size, 
+            backend="nccl")
     
     # create pytorch lightning strategy
     if strategy == "single_device":
