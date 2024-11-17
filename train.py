@@ -20,7 +20,7 @@ from external.model import GPT, Block
 logging.set_verbosity_error()
 
 
-def init_everything(precision, strategy, axonn_dims):
+def init_everything(precision, strategy, tp_dimensions):
     # initialize torch distributed
     rank = int(os.getenv("SLURM_PROCID", 0))
     world_size = int(os.getenv("SLURM_NTASKS", 1))
@@ -42,9 +42,9 @@ def init_everything(precision, strategy, axonn_dims):
         )
     elif strategy == "axonn":
         pl_strategy = AxonnStrategy(
-            G_intra_x=axonn_dims[0],
-            G_intra_y=axonn_dims[1],
-            G_intra_z=axonn_dims[2],
+            G_intra_x=tp_dimensions[0],
+            G_intra_y=tp_dimensions[1],
+            G_intra_z=tp_dimensions[2],
             overlap_communication=True,
         )
 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     args = parse_json_args(parser_args.config_file)
     
     # Create lightning fabric object
-    fabric = init_everything(args.precision, args.strategy, args.axonn_dimensions)
+    fabric = init_everything(args.precision, args.strategy, args.tp_dimensions)
     seed_everything(args.seed)
 
     # Create model

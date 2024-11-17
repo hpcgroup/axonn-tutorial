@@ -23,7 +23,7 @@ def print_rank0(msg):
     if dist.get_rank() == 0:
         print(f"{msg}")
 
-def init_everything(precision, strategy, axonn_dims):
+def init_everything(precision, strategy, tp_dimensions):
     # initialize torch distributed
     rank = int(os.getenv("SLURM_PROCID", 0))
     world_size = int(os.getenv("SLURM_NTASKS", 1))
@@ -33,11 +33,11 @@ def init_everything(precision, strategy, axonn_dims):
             backend="nccl")
  
     assert strategy == "axonn", "Inference has been setup just for axonn"
-    assert axonn_dims[2] == 1, "Inference doesn't support z tensor parallelism"
+    assert tp_dimensions[2] == 1, "Inference doesn't support z tensor parallelism"
     assert precision == "bf16-mixed"
     pl_strategy = AxonnStrategy(
-        G_intra_x=axonn_dims[0],
-        G_intra_y=axonn_dims[1],
+        G_intra_x=tp_dimensions[0],
+        G_intra_y=tp_dimensions[1],
         G_intra_z=1,
         overlap_communication=True,
     )
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser_args = parser.parse_args()
     args = parse_json_args(parser_args.config_file)
     # Create lightning fabric object
-    fabric = init_everything(args.precision, args.strategy, args.axonn_dimensions)
+    fabric = init_everything(args.precision, args.strategy, args.tp_dimensions)
     seed_everything(args.seed)
 
     # Create model

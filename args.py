@@ -9,7 +9,7 @@ def parse_json_args(filename):
         "seed": 123456,
         "precision": "32",
         "strategy": "axonn",
-        "axonn_dimensions": [],
+        "tp_dimensions": [],
         "global_batch_size": 4,
         "gradient_acc_steps": 1,
         "log_interval": 1,
