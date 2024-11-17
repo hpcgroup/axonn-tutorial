@@ -12,6 +12,8 @@ export SCRATCH="/scratch/zt1/project/sc24/shared/"
 export HF_HOME="${SCRATCH}/.cache/huggingface"
 export HF_TRANSFORMERS_CACHE="${HF_HOME}"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
+
+# variables needed for torch.distributed
 export MASTER_ADDR=$(hostname)
 export MASTER_PORT=29500
 
