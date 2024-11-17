@@ -27,7 +27,7 @@ echo "Copy completed. Time taken = ${runtime} s"
 # activate environment
 source /tmp/tutorial_env/bin/activate
 
-CONFIG_FILE="${CONFIG_FILE:-'configs/single_gpu.json'}"
+CONFIG_FILE="${CONFIG_FILE:-configs/single_gpu.json}"
 echo $CONFIG_FILE
 
 # Run torchrun with specified number of GPUs
