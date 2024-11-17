@@ -12,6 +12,8 @@ export SCRATCH="/scratch/zt1/project/sc24/shared/"
 export HF_HOME="${SCRATCH}/.cache/huggingface"
 export HF_TRANSFORMERS_CACHE="${HF_HOME}"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
+
+# variables needed for torch.distributed
 export MASTER_ADDR=$(hostname)
 export MASTER_PORT=29500
 
@@ -27,8 +29,9 @@ echo "Copy completed. Time taken = ${runtime} s"
 # activate environment
 source /tmp/tutorial_env/bin/activate
 
-CONFIG_FILE="${CONFIG_FILE:-'configs/single_gpu.json'}"
-echo $CONFIG_FILE
+CONFIG_FILE="${CONFIG_FILE:-configs/inference_axonn.json}"
 
 # Run torchrun with specified number of GPUs
-srun -u python -u train.py --config-file $CONFIG_FILE
+#srun -u python -u infer.py --config-file $CONFIG_FILE
+srun -u python -u infer.py --config-file $CONFIG_FILE
+#torchrun --nproc_per_node 1 infer.py --config-file $CONFIG_FILE

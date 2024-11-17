@@ -1,0 +1,7 @@
+{
+	"model_id": "meta-llama/Meta-Llama-3-8B-Instruct",
+	"strategy": "axonn",
+	"tp_dimensions": [1, 1, 1],
+	"precision": "bf16-mixed",
+        "compile": false	
+}

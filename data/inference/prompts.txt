@@ -1,0 +1,4 @@
+How do I bake a cake?
+Give me a summary of the play 'Romeo and Juliet'.
+Explain what the following Python code does: for i in range(10): print(i**2).
+Explain the Reimann Hypothesis to me like I am an 8 year old.

@@ -27,14 +27,14 @@ been downloaded in `/scratch/zt1/project/isc/shared/`.
 ### Using PyTorch Lightning
 
 ```bash
-CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  run.sh
+CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  train.sh
 ```
 
 ### Mixed Precision
 Open `configs/single_gpu.json` and change `precision` to `bf16-mixed` and then run - 
 
 ```bash
-CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  run.sh
+CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  train.sh
 ```
 
 
@@ -43,23 +43,42 @@ CONFIG_FILE=configs/single_gpu.json sbatch --ntasks-per-node=1  run.sh
 ### Pytorch Distributed Data Parallel (DDP)
 
 ```bash
-CONFIG_FILE=configs/ddp.json sbatch --ntasks-per-node=4  run.sh
+CONFIG_FILE=configs/ddp.json sbatch --ntasks-per-node=4  train.sh
 ```
 
 ### Fully Sharded Data Parallelism (FSDP)
 
 
 ```bash
-CONFIG_FILE=configs/fsdp.json sbatch --ntasks-per-node=4  run.sh
+CONFIG_FILE=configs/fsdp.json sbatch --ntasks-per-node=4  train.sh
 ```
 
 ## Tensor Parallelism
 
 ```bash
-CONFIG_FILE=configs/axonn.json sbatch --ntasks-per-node=4  run.sh
+CONFIG_FILE=configs/axonn.json sbatch --ntasks-per-node=4  train.sh
 ```
 
 ## Inference
 
+Add more prompts to `data/inference/prompts.txt` if you want. Then run
+
 ```bash
+CONFIG_FILE=configs/inference_axonn.json sbatch --ntasks-per-node=1  infer.sh
+```
+
+### With torch.compile
+
+Open `configs/axonn_inference.json` and change `compile` to `true`. Then run 
+
+```bash
+CONFIG_FILE=configs/inference_axonn.json sbatch --ntasks-per-node=1  infer.sh
+```
+
+### With tensor parallelism
+
+Open `configs/axonn_inference.json` and change `tp_dimensions` to `[4, 1, 1]`. Then run
+
+```bash
+CONFIG_FILE=configs/inference_axonn.json sbatch --ntasks-per-node=4  infer.sh
 ```

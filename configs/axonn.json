@@ -1,8 +1,8 @@
 {
 	"model_id": "meta-llama/Llama-2-7b-hf",
 	"strategy": "axonn",
-	"axonn_dimensions": [4, 1, 1],
-	"dtype": "bf16-mixed", 
+	"tp_dimensions": [4, 1, 1],
+	"precision": "bf16-mixed", 
 	"global_batch_size": 32, 
 	"gradient_acc_steps": 8, 
 	"dataset_id": "alpaca"
