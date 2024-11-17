@@ -15,6 +15,7 @@ def parse_json_args(filename):
         "log_interval": 1,
         "num_epochs": 1,
         "random_init": False,
+        "compile": False,
     }
 
     user_args = {}

@@ -33,3 +33,4 @@ echo $CONFIG_FILE
 # Run torchrun with specified number of GPUs
 #srun -u python -u infer.py --config-file $CONFIG_FILE
 srun -u python -u infer.py --config-file $CONFIG_FILE
+#torchrun --nproc_per_node 1 infer.py --config-file $CONFIG_FILE
