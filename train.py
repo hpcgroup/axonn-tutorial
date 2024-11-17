@@ -62,6 +62,16 @@ def init_everything(precision, strategy, axonn_dims):
 
     return fabric
 
+def create_parser():
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--config-file",
+        type=str,
+        default="sample_args_file.json",
+        help="Name of JSON file with args",
+    )
+    return parser
+
 
 def get_dataloader(args):
     data_dir = os.path.join(os.getenv("SCRATCH", "data"), "alpaca", args.model_id)
