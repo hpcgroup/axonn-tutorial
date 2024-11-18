@@ -22,6 +22,7 @@ logging.set_verbosity_error()
 
 def init_everything(precision, strategy, tp_dimensions):
     # initialize torch distributed
+    # this is the DL/ML equivalent of MPI_Init
     rank = int(os.getenv("SLURM_PROCID", 0))
     world_size = int(os.getenv("SLURM_NTASKS", 1))
     torch.distributed.init_process_group(rank=rank, 
@@ -50,11 +51,13 @@ def init_everything(precision, strategy, tp_dimensions):
 
     # create lightning fabric object
     fabric = Fabric(
-        strategy=pl_strategy,
+        strategy=pl_strategy, # strategy is passed here
         devices=1 if strategy == "single_device" else torch.cuda.device_count(),
         num_nodes=1,
         precision=precision,
     )
+    
+    # this is a dummy call in our case. 
     fabric.launch()
 
     if torch.distributed.get_rank() == 0:
@@ -105,13 +108,19 @@ def get_model(fabric, litgpt_checkpoint_directory, random_init: bool = False):
     # setup_module moves the model to the GPU. Actual model tensors 
     # are created in this step, directly on the GPU. 
     model = fabric.setup_module(model)
+    # at this point the model is initialized with random weights
+    # now we will load pretrained weights or parameters for finetuning
     if not random_init:
+        # load model weights or parameters into the model
         checkpoint_path = checkpoint_dir / "lit_model.pth"
         load_checkpoint(fabric, model, checkpoint_path)
+    # switch model to training mode. 
     model.train()
     return model
 
 def get_lr_scheduler(total_train_iters, warmup_iters=100):
+    # learning rate scheduler - first linearly increase the learning 
+    # rate till 100 iterations and then decay it with a cosine schedule
     main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=total_train_iters
     )
@@ -161,6 +170,7 @@ if __name__ == "__main__":
     optimizer = fabric.setup_optimizers(optimizer)
 
     # Create dataloader
+    # a dataloader creates batches from your input data
     dataloader = get_dataloader(args)
     dataloader = fabric.setup_dataloaders(dataloader)
 
@@ -187,7 +197,6 @@ if __name__ == "__main__":
         start_event.record()
 
         batch_loss = torch.tensor([0.0], dtype=torch.float32, device="cuda")
-
         for batch in dataloader:
             input_ids, labels = (
                 batch["input_ids"].cuda(),
@@ -196,11 +205,11 @@ if __name__ == "__main__":
             input_ids = input_ids[:, :-1]
             labels = labels[:, 1:]
             
-            # forward pass
+            # forward pass - calculate the loss
             output = model(input_ids=input_ids[:, :model.max_seq_length])
             logits = output["logits"]
             loss = loss_fn(
-                logits.reshape(-1, logits.shape[-1]).float(), #loss function should be computed in float for stability
+                logits.reshape(-1, logits.shape[-1]).float(), #loss function should be computed in float for numerical stability
                 labels[:, :model.max_seq_length].reshape(-1),
             )
 
@@ -210,9 +219,10 @@ if __name__ == "__main__":
 
             microbatch_no += 1
             if microbatch_no == args.gradient_acc_steps:
-                # gradient clipping
+                # gradient clipping - if the norm of gradients > 1 divide the gradients
+                # by their norm. Useful for maintaining stability in training.
                 grad_norm = fabric.clip_gradients(model, optimizer, max_norm=1.0)
-                # optimizer step
+                # optimizer step 
                 optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
                 lr_scheduler.step()
@@ -220,6 +230,7 @@ if __name__ == "__main__":
                 iter_no += 1
                 end_event.record()
 
+                # all reduce and average loss
                 batch_loss = all_reduce_avg(batch_loss)
 
                 if torch.distributed.get_rank() == 0 and (
