@@ -24,17 +24,18 @@ class GPT(nn.Module):
         assert config.padded_vocab_size is not None
         self.config = config
 
-        self.lm_head = nn.Linear(
-            config.n_embd, config.padded_vocab_size, bias=config.lm_head_bias
-        )
         self.transformer = nn.ModuleDict(
             dict(
-                wte=nn.Embedding(config.padded_vocab_size, config.n_embd),
+                wte=nn.Embedding(config.padded_vocab_size, config.n_embd), # this is the embedding block
                 h=nn.ModuleList(
-                    Block(config, block_idx) for block_idx in range(config.n_layer)
+                    Block(config, block_idx) for block_idx in range(config.n_layer) # list of encoder blocks
                 ),
                 ln_f=config.norm_class(config.n_embd, eps=config.norm_eps),
             )
+        )
+        # classifier block for predicting the next work
+        self.lm_head = nn.Linear(
+            config.n_embd, config.padded_vocab_size, bias=config.lm_head_bias
         )
         self.max_seq_length = self.config.block_size
         self.mask_cache: Optional[torch.Tensor] = None
@@ -224,7 +225,7 @@ class Block(nn.Module):
             )
 
         self.norm_1 = config.norm_class(config.n_embd, eps=config.norm_eps)
-        self.attn = CausalSelfAttention(config, block_idx)
+        self.attn = CausalSelfAttention(config, block_idx) # attention block
         self.post_attention_norm = (
             config.norm_class(config.n_embd, eps=config.norm_eps)
             if config.post_attention_norm
@@ -236,7 +237,7 @@ class Block(nn.Module):
             else config.norm_class(config.n_embd, eps=config.norm_eps)
         )
         mlp_class = getattr(sys.modules[__name__], config.mlp_class_name)
-        self.mlp = mlp_class(config)
+        self.mlp = mlp_class(config) # mlp block
         self.post_mlp_norm = (
             config.norm_class(config.n_embd, eps=config.norm_eps)
             if config.post_mlp_norm
