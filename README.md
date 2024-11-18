@@ -20,7 +20,7 @@ We have pre-built the dependencies required for this tutorial on Zaratan. This
 will be activated automatically when you run the bash scripts.
 
 Model weights and the training dataset have 
-been downloaded in `/scratch/zt1/project/isc/shared/`.
+been downloaded in `/scratch/zt1/project/sc24/shared/`.
 
 ## Basics of Model Training
 
