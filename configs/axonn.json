@@ -1,7 +1,7 @@
 {
 	"model_id": "meta-llama/Llama-2-7b-hf",
 	"strategy": "axonn",
-	"tp_dimensions": [4, 1, 1],
+	"tp_dimensions": [2, 2, 1],
 	"precision": "bf16-mixed", 
 	"global_batch_size": 32, 
 	"gradient_acc_steps": 8, 
