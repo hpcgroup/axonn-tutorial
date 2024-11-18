@@ -6,7 +6,8 @@ from argparse import ArgumentParser
 from torch.utils.data import DataLoader
 from lightning.fabric import Fabric, seed_everything
 from axonn.lightning import AxonnStrategy
-from lightning.fabric.strategies import FSDPStrategy, DDPStrategy
+from lightning.fabric.strategies import DDPStrategy
+from lightning.fabric.strategies import FSDPStrategy
 from transformers.utils import logging
 from utils import all_reduce_avg, pretty_log
 from args import parse_json_args

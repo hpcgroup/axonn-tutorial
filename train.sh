@@ -6,7 +6,7 @@
 #SBATCH -A sc24-class
 #SBATCH --exclusive
 #SBATCH --mem=500G
-#SBATCH --reservation=sc2024
+#SBATCH --reservation=sc24tut
 
 
 export SCRATCH="/scratch/zt1/project/sc24/shared/"
