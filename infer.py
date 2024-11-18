@@ -64,7 +64,8 @@ def get_model(fabric, litgpt_checkpoint_directory, random_init: bool = False):
     if not random_init:
         checkpoint_path = checkpoint_dir / "lit_model.pth"
         load_checkpoint(fabric, model, checkpoint_path)
-    model.train()
+    # put model in eval mode for inference
+    model.eval()
     return model
 
 if __name__ == "__main__":
